@@ -1,23 +1,24 @@
 <div align="center">
-  <h3><code>aakash@github ~/complaintiq $ ./banner.sh</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./banner.sh</code></h3>
   <img src="./assets/wordmark.svg" width="640" alt="ComplaintIQ — 3D ASCII Wordmark" />
   <p><code>Classify, prioritise, route and resolve customer complaints with explainable AI</code></p>
 
   <br><br>
 
-  <h3><code>aakash@github ~/complaintiq $ cat about.txt</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ cat about.txt</code></h3>
   <p>A support platform that reads each complaint and does the triage. It predicts the category, sentiment, emotion and priority, extracts order IDs, amounts, products and places, routes the complaint to a department, and drafts a reply grounded in approved playbooks for staff approval.
   It groups duplicate complaints, flags emerging spikes by product or city, and learns from agent corrections. Every decision comes with the reason behind it.
+  A landing page at <code>/</code> shows the product; the working console lives at <code>/app</code>. Design rules: <a href="DESIGN.md">DESIGN.md</a>.
   Details: <a href="docs/DOCUMENTATION.md">documentation</a> · <a href="data/README.md">dataset & splits</a> · evaluation in <code>backend/artifacts/</code>.</p>
 
   <br><br>
 
-  <h3><code>aakash@github ~/complaintiq $ ./preview.sh</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./preview.sh</code></h3>
   <img src="./assets/preview.jpg" width="860" alt="ComplaintIQ preview" />
 
   <br><br>
 
-  <h3><code>aakash@github ~/complaintiq $ ./stack.sh</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./stack.sh</code></h3>
   <p>
     <img src="https://img.shields.io/badge/React-0d1117?style=for-the-badge&logo=react&logoColor=white" alt="React" />&nbsp;
     <img src="https://img.shields.io/badge/Tailwind_CSS-0d1117?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />&nbsp;
@@ -34,14 +35,14 @@
 
   <br><br>
 
-  <h3><code>aakash@github ~/complaintiq $ ./run.sh</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./run.sh</code></h3>
 </div>
 
 Needs Python 3.12 with [uv](https://docs.astral.sh/uv/), Node 20+, and PostgreSQL. Without `DATABASE_URL`, the backend falls back to SQLite. Without `GEMINI_API_KEY`, drafts use a template.
 
 ```bash
-git clone https://github.com/Aakashxnoir/complaintiq.git
-cd complaintiq
+git clone https://github.com/Aakashxnoir/AI-Powered-Customer-Complaint-Classification-Resolution-System.git
+cd AI-Powered-Customer-Complaint-Classification-Resolution-System
 
 # backend (Python deps, CPU PyTorch, spaCy model)
 cd backend && uv sync && cp .env.example .env && cd ..
@@ -55,7 +56,7 @@ backend/.venv/bin/python ml/seed_db.py --reset
 # API on :8000
 cd backend && .venv/bin/uvicorn app.main:app --port 8000
 
-# UI on :5173 (second terminal)
+# landing page on :5173, console on :5173/app (second terminal)
 cd frontend && npm install && npm run dev
 ```
 
@@ -65,7 +66,7 @@ cd backend && .venv/bin/python -m pytest -q tests
 
 <div align="center">
   <br>
-  <h3><code>aakash@github ~/complaintiq $ ./links.sh</code></h3>
+  <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./links.sh</code></h3>
   <p>
     <a href="https://aakash-portfolio-navy.vercel.app"><img src="https://img.shields.io/badge/Portfolio-NOIR%2FOS-0d1117?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio" /></a>&nbsp;
     <a href="https://github.com/Aakashxnoir"><img src="https://img.shields.io/badge/GitHub-Aakashxnoir-0d1117?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>

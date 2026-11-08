@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../api'
-import { CAT_COLORS, Card, PRIORITIES, SENTIMENTS, Stat } from '../ui'
+import { CAT_COLORS, Card, Loading, PRIORITIES, SENTIMENTS, Stat } from '../ui'
 
 const PRI_COLORS = { critical: '#dc2626', high: '#f97316', medium: '#eab308', low: '#94a3b8' }
 const SENT_COLORS = { positive: '#10b981', neutral: '#94a3b8', negative: '#f97316', highly_negative: '#dc2626' }
@@ -16,7 +16,7 @@ export default function Overview() {
     api.trends().then(setT).catch(() => {})
   }, [])
   if (err) return <p className="text-red-600">Backend not reachable: {err}</p>
-  if (!s) return <p className="text-slate-500">Loading…</p>
+  if (!s) return <Loading />
 
   const cat = Object.entries(s.by_category).map(([name, value]) => ({ name, value }))
   const pri = PRIORITIES.map((p) => ({ name: p, value: s.by_priority[p] || 0 }))
@@ -25,20 +25,20 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Overview</h1>
+      <h1 className="text-xl font-medium text-stone-900">Overview</h1>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Complaints" value={s.total} />
-        <Stat label="Critical / high" value={(s.by_priority.critical || 0) + (s.by_priority.high || 0)} sub="need fast response" />
+        <Stat label="Critical / high" value={(s.by_priority.critical || 0) + (s.by_priority.high || 0)} />
         <Stat label="Open" value={s.by_status.new || 0} sub="no approved response yet" />
         <Stat label="Duplicates to review" value={s.pending_duplicates} />
       </div>
 
       {t?.alerts?.length > 0 && (
-        <Card title="Emerging issues" action={<Link to="/trends" className="text-sm text-indigo-600">View trends →</Link>}>
+        <Card title="Emerging issues" action={<Link to="/trends" className="text-sm text-brand-600">View trends →</Link>}>
           <ul className="space-y-2">
             {t.alerts.slice(0, 3).map((a) => (
               <li key={a.dimension + a.value} className="flex items-start gap-3 rounded-lg bg-red-50 p-3 text-sm text-red-900">
-                <span className="mt-0.5 rounded bg-red-600 px-1.5 text-xs font-semibold text-white">+{a.increase_pct}%</span>
+                <span className="mt-0.5 rounded bg-red-600 px-1.5 text-xs font-medium text-white">+{a.increase_pct}%</span>
                 {a.message}
               </li>
             ))}
@@ -84,7 +84,7 @@ export default function Overview() {
         <ResponsiveContainer width="100%" height={Math.max(160, dept.length * 34)}>
           <BarChart data={dept} layout="vertical" margin={{ left: 40 }}>
             <XAxis type="number" fontSize={12} /><YAxis type="category" dataKey="name" width={130} fontSize={12} /><Tooltip />
-            <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="value" fill="#111111" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>

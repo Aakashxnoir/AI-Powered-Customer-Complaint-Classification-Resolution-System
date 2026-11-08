@@ -7,3 +7,4 @@ node_modules/
 frontend/dist/
 data/raw/
 .pytest_cache/
+frontend/.taste-skill/
