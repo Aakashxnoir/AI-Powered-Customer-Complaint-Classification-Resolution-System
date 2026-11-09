@@ -16,7 +16,17 @@
   --color-brand-700: #000000;
   --color-brand-800: #000000;
   --color-brand-900: #111111;
+  --color-surface-2: #ebe7e1;
+  --color-ink-muted: #626260;
+  --color-ink-subtle: #7b7b78;
+  --color-ai-accent: #e8590c;   /* the model's own marks only */
+  --color-error: #c41c1c;
+  --color-success: #0f9d58;
 }
+
+/* browser surfaces carry the palette too */
+::selection { background: color-mix(in srgb, var(--color-ai-accent) 22%, transparent); }
+html { accent-color: var(--color-ink); caret-color: var(--color-ink); }
 
 :focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
 

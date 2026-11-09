@@ -12,12 +12,13 @@ import numpy as np
 from .embeddings import embed
 
 ARTIFACTS = Path(__file__).resolve().parents[2] / "artifacts"
-MODEL_PATH = ARTIFACTS / "classifier.joblib"
+MODEL_PATH = ARTIFACTS / "classifier.joblib"                 # trained by ml/train.py (tracked)
+RETRAINED_PATH = ARTIFACTS / "classifier_retrained.joblib"   # written by /api/model/retrain (git-ignored)
 
 
 @lru_cache
 def load():
-    return joblib.load(MODEL_PATH)
+    return joblib.load(RETRAINED_PATH if RETRAINED_PATH.exists() else MODEL_PATH)
 
 
 def reload():
@@ -39,6 +40,8 @@ def predict(texts: list[str], vectors: np.ndarray | None = None) -> list[dict]:
 def explain(text: str, category: str, top_k: int = 6) -> list[dict]:
     """Words whose removal most reduces the probability of `category`."""
     clf = load()
+    if category not in clf.classes_:
+        return []
     words = text.split()
     if len(words) > 80:  # keep latency bounded
         words = words[:80]

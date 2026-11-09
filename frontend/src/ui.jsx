@@ -7,23 +7,29 @@ export const DEPARTMENTS = ['Billing & Payments', 'Logistics', 'Product Quality'
   'Account Services', 'Technical Support', 'Fraud & Security', 'Product Safety']
 
 export const CAT_COLORS = {
-  payment: '#65b5ff', delivery: '#03b2cb', product: '#fe7a2f',
+  payment: '#65b5ff', delivery: '#03b2cb', product: '#8a7cf0',  // orange is reserved for AI marks
   refund: '#0bb04a', account: '#ff2067', technical: '#9cc417',
 }
 
+// Severity reads by weight of the error token: filled > outlined > neutral.
+const ERR = 'bg-error text-white ring-error', ERR_SOFT = 'bg-white text-error ring-error/40'
+const NEUTRAL = 'bg-surface-2 text-ink ring-hairline', QUIET = 'bg-white text-ink-muted ring-hairline'
 const TONE = {
-  critical: 'bg-red-100 text-red-800 ring-red-200', high: 'bg-orange-100 text-orange-800 ring-orange-200',
-  medium: 'bg-yellow-100 text-yellow-800 ring-yellow-200', low: 'bg-stone-100 text-stone-700 ring-stone-200',
-  positive: 'bg-emerald-100 text-emerald-800 ring-emerald-200', neutral: 'bg-stone-100 text-stone-700 ring-stone-200',
-  negative: 'bg-orange-100 text-orange-800 ring-orange-200', highly_negative: 'bg-red-100 text-red-800 ring-red-200',
-  new: 'bg-blue-100 text-blue-800 ring-blue-200', approved: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-  rejected: 'bg-stone-200 text-stone-700 ring-stone-300', pending: 'bg-brand-100 text-brand-800 ring-brand-200',
+  critical: ERR, high: ERR_SOFT, medium: NEUTRAL, low: QUIET,
+  highly_negative: ERR, negative: ERR_SOFT, neutral: QUIET, positive: 'bg-white text-success ring-success/40',
+  new: NEUTRAL, approved: 'bg-success text-white ring-success', rejected: QUIET,
+  pending: 'bg-white text-ai-accent ring-ai-accent/40',
+}
+
+// Marks what the model produced (DESIGN.md: one orange, for the AI only).
+export function AiMark({ children = 'AI' }) {
+  return <span className="text-xs font-medium text-ai-accent">{children}</span>
 }
 
 export function Badge({ value, className = '' }) {
   if (!value) return null
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${TONE[value] || 'bg-stone-100 text-stone-700 ring-stone-200'} ${className}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${TONE[value] || NEUTRAL} ${className}`}>
       {value.replace('_', ' ')}
     </span>
   )
@@ -32,7 +38,7 @@ export function Badge({ value, className = '' }) {
 export function CatBadge({ value }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-700">
-      <span className="h-2 w-2 rounded-full" style={{ background: CAT_COLORS[value] || '#94a3b8' }} />
+      <span className="h-2 w-2 rounded-full" style={{ background: CAT_COLORS[value] || 'var(--color-ink-subtle)' }} />
       {value}
     </span>
   )
@@ -100,9 +106,9 @@ export function Toast() {
   return <div key={msg.key} role="status" className="toast fixed bottom-5 right-5 z-50 rounded-lg bg-ink px-4 py-2.5 text-sm text-white">{msg.text}</div>
 }
 
-export const btn = 'inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition hover:-translate-y-px active:translate-y-0 active:scale-[.98] disabled:pointer-events-none disabled:opacity-50'
+export const btn = 'inline-flex items-center justify-center gap-1 rounded-lg px-[18px] py-2 text-sm font-medium transition hover:-translate-y-px active:translate-y-0 active:scale-[.98] disabled:pointer-events-none disabled:opacity-50'
 export const btnPrimary = `${btn} bg-brand-600 text-white hover:bg-brand-500`
-export const btnGhost = `${btn} border border-stone-300 bg-white text-stone-700 hover:bg-stone-50`
-export const input = 'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500'
+export const btnGhost = `${btn} border border-hairline bg-white text-ink hover:bg-surface-2`
+export const input = 'rounded-lg border border-hairline bg-white px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500'
 
 export const fmtDate = (d) => new Date(d).toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })

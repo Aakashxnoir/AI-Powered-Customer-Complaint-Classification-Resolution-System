@@ -36,7 +36,7 @@ export default function Evaluation() {
       notify(r.deployed ? 'New model deployed' : 'Accuracy dropped, current model kept')
     } catch (e) { setRt({ error: e.message }) } finally { setBusy(false); load() }
   }
-  if (err && !d) return <p className="text-red-600">Backend not reachable: {err}</p>
+  if (err && !d) return <p className="text-error">Backend not reachable: {err}</p>
   if (!d) return <Loading />
   const cm = d.offline.classifier_metrics
   const ev = d.offline.evaluation
@@ -92,7 +92,7 @@ export default function Evaluation() {
             <table className="w-full min-w-[600px] text-sm">
               <thead className="text-left text-xs text-stone-500"><tr><th className="p-2">Text</th><th className="p-2">True</th><th className="p-2">Predicted</th><th className="p-2">Conf.</th></tr></thead>
               <tbody className="divide-y divide-stone-100">{cm.samples.map((s, i) => (
-                <tr key={i} className={s.category !== s.predicted ? 'bg-red-50' : ''}><td className="p-2">{s.text}</td><td className="p-2">{s.category}</td><td className="p-2">{s.predicted}</td><td className="p-2">{pct(s.confidence)}</td></tr>
+                <tr key={i} className={s.category !== s.predicted ? 'bg-error/5' : ''}><td className="p-2">{s.text}</td><td className="p-2">{s.category}</td><td className="p-2">{s.predicted}</td><td className="p-2">{pct(s.confidence)}</td></tr>
               ))}</tbody>
             </table>
           </div>
@@ -107,8 +107,8 @@ export default function Evaluation() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Where the system performs poorly">
-          {fb.weak_spots.length === 0 ? <p className="text-sm text-stone-500">No weak categories yet (needs ≥2 reviews per category with &lt;90% agreement).</p> : (
-            <ul className="space-y-1 text-sm">{fb.weak_spots.map((w) => <li key={w.category}><b>{w.category}</b>: {pct(w.accuracy)} agreement over {w.reviewed} reviews</li>)}</ul>
+          {fb.weak_spots.length === 0 ? <p className="text-sm text-stone-500">No weak spots yet (needs ≥2 reviews of one predicted value with &lt;90% agreement).</p> : (
+            <ul className="space-y-1 text-sm">{fb.weak_spots.map((w) => <li key={w.field + w.value}><span className="text-stone-500">{w.field}</span> <b>{w.value}</b>: {pct(w.accuracy)} agreement over {w.reviewed} reviews</li>)}</ul>
           )}
           <p className="mt-3 text-sm text-stone-600">{pct(fb.low_confidence_share)} of complaints have category confidence below 60%.</p>
           <p className="mt-1 text-sm text-stone-600">Drafts: {Object.entries(fb.responses).map(([k, v]) => `${v} ${k}`).join(' · ') || 'no decisions yet'}{fb.fields.duplicate && ` · duplicates: ${fb.fields.duplicate.reviewed} reviewed, ${fb.fields.duplicate.corrected} rejected`}</p>
@@ -120,7 +120,7 @@ export default function Evaluation() {
         <Card title="Retrain classifier with feedback">
           <p className="text-sm text-stone-600">Refits the classifier on the training set plus every reviewer-corrected complaint (weighted ×3), then checks held-out test accuracy. The new model is deployed only if accuracy drops by no more than 1 point, so bad feedback cannot silently break the model.</p>
           <button className={`${btnPrimary} mt-3`} onClick={retrain} disabled={busy}>{busy ? 'Retraining…' : 'Retrain now'}</button>
-          {rt && (rt.error ? <p className="mt-2 text-sm text-red-600">{rt.error}</p> :
+          {rt && (rt.error ? <p className="mt-2 text-sm text-error">{rt.error}</p> :
             <p className="mt-2 text-sm">Learned from <b>{rt.feedback_examples}</b> corrections. Test accuracy {pct(rt.test_accuracy_before)} → <b>{pct(rt.test_accuracy_after)}</b>. {rt.deployed ? 'New model deployed.' : 'Accuracy dropped, so the current model was kept. Check the corrections.'}</p>)}
         </Card>
       </div>

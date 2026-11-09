@@ -36,7 +36,7 @@ export default function Intake() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-medium text-stone-900">New complaint</h1>
-      {err && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</p>}
+      {err && <p className="rounded-lg bg-white border border-error/30 p-3 text-sm text-error">{err}</p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Single complaint">
           <form onSubmit={submit} className="space-y-3">
@@ -44,7 +44,7 @@ export default function Intake() {
             <textarea className={`${input} h-40 w-full`} placeholder="Describe the issue…" value={text} onChange={(e) => setText(e.target.value)} required minLength={10} />
             <div className="flex flex-wrap gap-2">
               {EXAMPLES.map((ex, i) => (
-                <button type="button" key={i} onClick={() => setText(ex)} className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-200">Example {i + 1}</button>
+                <button type="button" key={i} onClick={() => setText(ex)} className="rounded-md border border-hairline bg-white px-2.5 py-1 text-xs text-ink-muted hover:bg-surface-2">Example {i + 1}</button>
               ))}
             </div>
             <button className={btnPrimary} disabled={busy}>{busy === 'one' ? 'Analysing…' : 'Analyse complaint'}</button>
@@ -64,7 +64,7 @@ export default function Intake() {
               <p className="text-stone-600">Categories: {Object.entries(result.by_category).map(([k, v]) => `${k} ${v}`).join(' · ')}</p>
               <p className="text-stone-600">Priority: {Object.entries(result.by_priority).map(([k, v]) => `${k} ${v}`).join(' · ')}</p>
               {result.errors.length > 0 && (
-                <details className="rounded-lg bg-amber-50 p-2 text-amber-900">
+                <details className="rounded-lg bg-surface-2 p-2 text-ink">
                   <summary>{result.errors.length} rows skipped</summary>
                   <ul className="mt-1 list-disc pl-5">{result.errors.slice(0, 50).map((e) => <li key={e.row}>Row {e.row}: {e.error}</li>)}</ul>
                 </details>

@@ -20,7 +20,7 @@ export default function App() {
   useEffect(() => { api.health().then((h) => setLlm(h.llm)).catch(() => setLlm('offline')) }, [])
   return (
     <div className="min-h-screen bg-page text-stone-800 md:flex">
-      <aside className="border-b border-stone-200 bg-white md:fixed md:inset-y-0 md:w-56 md:border-b-0 md:border-r">
+      <aside className="border-b border-hairline bg-white md:fixed md:inset-y-0 md:w-56 md:border-b-0 md:border-r">
         <div className="px-5 py-4">
           <a href="/" className="flex items-center gap-2 text-lg font-medium tracking-tight text-ink">
             <svg viewBox="0 0 24 24" className="h-5 w-5 fill-brand-600" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.5" /><circle cx="17.5" cy="6.5" r="4.5" /><circle cx="6.5" cy="17.5" r="4.5" /><rect x="13" y="13" width="9" height="9" rx="1.5" /></svg>

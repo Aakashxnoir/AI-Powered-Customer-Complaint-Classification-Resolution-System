@@ -21,13 +21,13 @@ Every complaint goes through one pipeline (`backend/app/pipeline.py`). Each step
 | Sentiment (4 levels) | `cardiffnlp/twitter-roberta-base-sentiment-latest`, escalated to *highly negative* by intensity markers | Class probabilities |
 | Emotion / frustration | `j-hartmann/emotion-english-distilroberta-base` | 7 emotion scores; frustration = anger + disgust + ½ sadness |
 | Entities | Regex (order ID, amount, email, phone) + catalogue gazetteer (product, city) + spaCy NER (dates, other places, money) | Entity chips |
-| Priority | Additive business-rule score (fraud, safety, legal threat, urgency, amount, sentiment, frustration, repeat complaint) | Every point listed with its reason |
+| Priority, urgency, severity | Additive business-rule score (fraud, safety, legal threat, urgency, amount, sentiment, frustration, repeat complaint); keywords preceded by "not/no/never" are ignored. The same factors split into a 0-1 urgency score (how soon) and severity score (how bad) | Every point listed with its reason; urgency and severity shown as rule scores, not probabilities |
 | Routing | Category → department, with overrides for fraud and product safety | Routing reason text |
 | Duplicates | Cosine similarity of embeddings + identity rules (customer / order ID) | Similarity %, link to the original, human confirm/reject |
 | Similar complaints | Top-5 semantic neighbours across all customers | Similarity % |
-| Resolution | Retrieve the 2 closest approved playbooks (`data/kb`), Gemini drafts a reply grounded only in them; template fallback | Cited playbooks; staff must approve, edit or reject |
-| Trends | Last 72 h vs previous 14 days per category, product and location; z-score ≥ 2.5 and ≥ 6 complaints | Alert text with rates, z-score and % increase |
-| Feedback | Every confirmation or correction is logged; per-field agreement, weak categories, retrain with guard | Evaluation dashboard |
+| Resolution | Retrieve the 2 closest approved playbooks (`data/kb`, +0.15 similarity bonus for the predicted category), Gemini drafts a reply grounded only in them; the complaint is passed as delimited data; cited playbooks not in the retrieved set are dropped; template fallback when the key, call or reply shape fails | Cited playbooks; staff must approve, edit or reject (sending is out of scope) |
+| Trends | Last 72 h vs previous 14 days per category, product and location (windows end at the newest complaint, never after now; needs 17 days of history); z-score ≥ 2.5 and ≥ 6 complaints | Alert text with rates, z-score and % increase |
+| Feedback | Every confirmation or correction is logged (the latest verdict per complaint and field counts); per-field agreement, weak spots for any field and predicted value, retrain with guard | Evaluation dashboard |
 
 ## 3. Architecture
 
@@ -61,10 +61,10 @@ Offline scripts in `ml/`:
 
 ## 5. Implementation notes
 
-- **Explainability.** Category explanations use occlusion. Each word is removed in turn, the text is re-scored, and the drop in predicted-class probability is that word's importance. This is faithful to the real embedding model, not a proxy model.
-- **Duplicate definition.** A duplicate is *the same case raised again*: similarity ≥ 0.80 with a shared customer or order ID, or ≥ 0.88 when identity is unknown. Different customers or different order IDs are never duplicates, even with near-identical wording. That case is a *trend*, and it appears under "Similar complaints". This rule came from evaluation: plain cosine similarity flagged 480 of 1,193 templated complaints, with precision 0.20. The identity rules raised precision to 0.93 at recall 1.00.
+- **Explainability.** Category explanations use occlusion. Each word is removed in turn, the text is re-scored, and the drop in predicted-class probability is that word's importance. This is faithful to the real embedding model, not a proxy model. Only the first 80 words are scored, to bound latency.
+- **Duplicate definition.** A duplicate is *the same case raised again*: similarity ≥ 0.80 with a shared customer or order ID, or ≥ 0.88 when identity is unknown. Different customers or different order IDs are never duplicates, even with near-identical wording. That case is a *trend*, and it appears under "Similar complaints". This rule came from evaluation: in an early run (not saved as an artifact), plain cosine similarity flagged hundreds of different-customer complaints as duplicates, at a precision near 0.2. With the identity rules, precision is 0.93 at recall 1.00 (`evaluation.json`).
 - **Human in the loop.** Category, sentiment, priority and department can each be corrected. Drafts need approval. Duplicate matches need confirmation. The original model output is kept in `analysis.original`, so agreement is measured against the model, not the last edit.
-- **Safe retraining.** `/api/model/retrain` refits on training data plus corrected complaints (weight ×3). It deploys only if held-out test accuracy drops by no more than 1 point. In testing, deliberately wrong labels lowered accuracy and the guard kept the old model.
+- **Safe retraining.** `/api/model/retrain` refits on training data plus corrected complaints (weight ×3). It deploys only if held-out test accuracy is within 1 point of the **original** model, so repeated retrains cannot drift down a point at a time. The retrained model is written to `classifier_retrained.joblib` (git-ignored); deleting it restores the original.
 
 ## 6. Results
 
@@ -95,6 +95,11 @@ Per-class F1 (MiniLM): payment 1.00, account 0.97, technical 0.92, refund 0.90, 
 - **Sentiment labels are weak.** The tone of the template wrapper is not true sentiment. A politely worded complaint about a broken product is still negative, and the model says so. Most "errors" are neutral→negative, which is arguably correct.
 - **Priority is rule-based.** No ground truth for priority exists. The weights are hand-set, and they are explained rather than learned.
 - **Duplicate threshold** was chosen on the same demo stream it is evaluated on (no separate tuning split).
+- **Sentiment score is partly circular.** The *highly negative* escalation looks for words (worst, unacceptable, lawyer, never shop…) that the synthetic generator also uses to write highly negative complaints, so 65.4% is optimistic.
+- **Mild Bitext leak.** 53 of 457 Bitext test rows have token-Jaccard ≥ 0.8 with a training row, which partly explains Bitext's 99.8%. The dataset revision is not pinned.
+- **Retrain gate** reuses the offline test set, and the seeded demo complaints are built from test templates, so corrections on them leak into the gate.
+- **Keyword rules** use a 3-word negation window, not a parser.
+- **No authentication.** The API is meant for a local demo behind the Vite proxy. Local-only guards are in place (only `localhost`/`127.0.0.1` hosts, writes refused from foreign browser origins, console not frameable), but put it behind SSO before real use.
 - **English only, CPU only.** Seeding about 1,200 complaints takes about 3-5 minutes on CPU.
 - **LLM output** is constrained by prompt and retrieval but not formally verified. Staff approval is the safeguard.
 

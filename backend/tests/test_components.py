@@ -28,6 +28,24 @@ def test_entities():
     assert e["dates"]
 
 
+def test_entity_edge_cases():
+    assert entities.extract("I placed 3 orders 15000 times over two years 12000")["amounts"] == []
+    assert entities.extract("Paid Rs.2,500 and INR 300")["amounts"] == [2500.0, 300.0]
+    assert entities.extract("Where is order no. 123456?")["order_ids"] == ["ORD-123456"]
+    assert entities.extract("Where is order number 554210?")["order_ids"] == ["ORD-554210"]
+    assert entities.extract("Order ORD-9876543210 is late")["phones"] == []
+
+
+def test_keyword_rules_respect_context():
+    neg = {"sentiment": "neutral", "frustration": 0}
+    t = "This is not fraud, just a late delivery of my parcel."
+    assert rules.route(t, "delivery", 0.9, "low")["department"] == "Logistics"
+    t = "My Fire TV remote stopped pairing."
+    assert not any("safety" in f["reason"] for f in rules.priority(t, "product", neg, {}, False)["priority_factors"])
+    t = "I ordered today and want to change the address."
+    assert rules.priority(t, "delivery", neg, {}, False)["priority"] == "low"
+
+
 def test_priority_and_routing():
     text = "Unauthorized charge of ₹15000 on my card, fix it immediately or I go to my lawyer!"
     ents = entities.extract(text)
@@ -62,3 +80,14 @@ def test_trend_spike_detected():
     alerts = trends.detect(pd.DataFrame(rows))
     assert ("location", "Chennai") in {(a["dimension"], a["value"]) for a in alerts}
     assert ("location", "Pune") not in {(a["dimension"], a["value"]) for a in alerts}
+    # one future-dated row must not hide the spike
+    future = pd.DataFrame([{"created_at": datetime(2030, 1, 1), "category": "delivery", "product": None, "location": "Pune"}])
+    alerts = trends.detect(pd.concat([pd.DataFrame(rows), future]), now=end + timedelta(hours=1))
+    assert ("location", "Chennai") in {(a["dimension"], a["value"]) for a in alerts}
+
+
+def test_trend_needs_a_baseline():
+    end = datetime(2026, 11, 7)
+    rows = [{"created_at": end - timedelta(days=d), "category": "delivery", "product": None, "location": "Pune"}
+            for d in range(3) for _ in range(3)]
+    assert trends.detect(pd.DataFrame(rows), now=end) == []

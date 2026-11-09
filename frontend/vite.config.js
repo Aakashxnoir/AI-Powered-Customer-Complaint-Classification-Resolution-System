@@ -14,10 +14,14 @@ const appFallback = {
   },
 }
 
+const FRAME_HEADERS = { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'" }
+
 export default defineConfig({
   plugins: [react(), tailwindcss(), appFallback],
   appType: 'mpa',
-  server: { proxy: { '/api': 'http://localhost:8000' } },
+  // The console must not be framed by another site (clickjacking on "Approve reply").
+  server: { proxy: { '/api': 'http://localhost:8000' }, headers: FRAME_HEADERS },
+  preview: { proxy: { '/api': 'http://localhost:8000' }, headers: FRAME_HEADERS },
   build: {
     assetsDir: 'static',
     rollupOptions: { input: { main: fileURLToPath(new URL('index.html', import.meta.url)), app: fileURLToPath(new URL('app/index.html', import.meta.url)) } },

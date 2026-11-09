@@ -25,7 +25,7 @@ colors:
   chart-lime: "#9cc417"
   chart-green: "#0bb04a"
   chart-pink: "#ff2067"
-  chart-orange: "#fe7a2f"
+  chart-violet: "#8a7cf0"   # replaces chart-orange: orange stays reserved for ai-accent
 
 typography:
   family: "Geist (text and display), Geist Mono (product UI only)"
@@ -51,7 +51,8 @@ spacing: { xxs: 4px, xs: 8px, sm: 12px, md: 16px, lg: 24px, xl: 32px, xxl: 48px,
 - **One family.** Geist at 500 for display with negative tracking, 400 for body. Geist Mono only inside product UI (IDs, code). Sentence case everywhere, no tracked capitals.
 - **Radii:** 8px buttons and inputs, 12px cards, 16px product mock-ups, pill only for tabs and avatars.
 - **The product leads.** Every section's picture is the ComplaintIQ console or one of its panels, framed in a white 16px tile.
-- **Charts** use the chart palette inside the product only. It never becomes a brand surface.
+- **Charts** use the chart palette inside the product only. It never becomes a brand surface. There is no orange in it.
+- **Status and severity** use `error` and `success` only: filled for the worst level, a 40% outline for the next, neutral surfaces below that. Badges are 4px-radius tags, not pills.
 - **Inverse** (`inverse-canvas` black) is used once a page at most, for a single proof band.
 
 ## Where it is applied

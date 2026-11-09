@@ -46,6 +46,7 @@ cd AI-Powered-Customer-Complaint-Classification-Resolution-System
 
 # backend (Python deps, CPU PyTorch, spaCy model)
 cd backend && uv sync && cp .env.example .env && cd ..
+# optional PostgreSQL: createdb complaints, then set DATABASE_URL in backend/.env
 
 # data, models, evaluation, demo data (~10 min on CPU)
 backend/.venv/bin/python ml/generate_data.py
@@ -61,7 +62,7 @@ cd frontend && npm install && npm run dev
 ```
 
 ```bash
-cd backend && .venv/bin/python -m pytest -q tests
+cd backend && uv run pytest -q
 ```
 
 <div align="center">

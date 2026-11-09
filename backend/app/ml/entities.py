@@ -5,10 +5,10 @@ from functools import lru_cache
 
 from .catalog import CITIES, PRODUCTS
 
-ORDER_RE = re.compile(r"\b(?:ORD|ORDER)[-#\s]?(\d{5,10})\b", re.I)
-AMOUNT_RE = re.compile(r"(?:₹|rs\.?|inr|\$)\s?(\d[\d,]*(?:\.\d{1,2})?)", re.I)
+ORDER_RE = re.compile(r"\b(?:ORD|ORDER)(?:\s*(?:no\.?|number|id))?[-#:\s]*(\d{5,10})\b", re.I)
+AMOUNT_RE = re.compile(r"(?:₹|\brs\.?|\binr|\$)\s?(\d[\d,]*(?:\.\d{1,2})?)", re.I)
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
-PHONE_RE = re.compile(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)")
+PHONE_RE = re.compile(r"(?<![\w-])(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)")
 
 
 @lru_cache

@@ -4,8 +4,8 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { api } from '../api'
 import { CAT_COLORS, Card, Loading, PRIORITIES, SENTIMENTS, Stat } from '../ui'
 
-const PRI_COLORS = { critical: '#dc2626', high: '#f97316', medium: '#eab308', low: '#94a3b8' }
-const SENT_COLORS = { positive: '#10b981', neutral: '#94a3b8', negative: '#f97316', highly_negative: '#dc2626' }
+const PRI_COLORS = { critical: '#c41c1c', high: '#111111', medium: '#7b7b78', low: '#d3cec6' }
+const SENT_COLORS = { positive: '#0f9d58', neutral: '#d3cec6', negative: '#7b7b78', highly_negative: '#c41c1c' }
 
 export default function Overview() {
   const [s, setS] = useState(null)
@@ -15,7 +15,7 @@ export default function Overview() {
     api.stats().then(setS).catch((e) => setErr(e.message))
     api.trends().then(setT).catch(() => {})
   }, [])
-  if (err) return <p className="text-red-600">Backend not reachable: {err}</p>
+  if (err) return <p className="text-error">Backend not reachable: {err}</p>
   if (!s) return <Loading />
 
   const cat = Object.entries(s.by_category).map(([name, value]) => ({ name, value }))
@@ -37,8 +37,8 @@ export default function Overview() {
         <Card title="Emerging issues" action={<Link to="/trends" className="text-sm text-brand-600">View trends →</Link>}>
           <ul className="space-y-2">
             {t.alerts.slice(0, 3).map((a) => (
-              <li key={a.dimension + a.value} className="flex items-start gap-3 rounded-lg bg-red-50 p-3 text-sm text-red-900">
-                <span className="mt-0.5 rounded bg-red-600 px-1.5 text-xs font-medium text-white">+{a.increase_pct}%</span>
+              <li key={a.dimension + a.value} className="flex items-start gap-3 rounded-lg border border-error/30 bg-white p-3 text-sm text-ink">
+                <span className="mt-0.5 rounded bg-error px-1.5 text-xs font-medium text-white">+{a.increase_pct}%</span>
                 {a.message}
               </li>
             ))}

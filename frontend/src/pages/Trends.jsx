@@ -7,7 +7,7 @@ export default function Trends() {
   const [t, setT] = useState(null)
   const [err, setErr] = useState('')
   useEffect(() => { api.trends().then(setT).catch((e) => setErr(e.message)) }, [])
-  if (err) return <p className="text-red-600">Backend not reachable: {err}</p>
+  if (err) return <p className="text-error">Backend not reachable: {err}</p>
   if (!t) return <Loading />
   const cats = Object.keys(CAT_COLORS)
   const toBars = (o) => Object.entries(o).map(([name, value]) => ({ name, value }))
@@ -20,10 +20,10 @@ export default function Trends() {
         {t.alerts.length === 0 ? <p className="text-sm text-stone-500">No unusual spikes detected.</p> : (
           <div className="grid gap-3 md:grid-cols-2">
             {t.alerts.map((a) => (
-              <div key={a.dimension + a.value} className="rounded-lg border border-red-200 bg-red-50 p-4">
+              <div key={a.dimension + a.value} className="rounded-lg border border-error/30 bg-white p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium capitalize text-red-700">{a.dimension}</span>
-                  <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white">+{a.increase_pct}%</span>
+                  <span className="text-xs font-medium capitalize text-error">{a.dimension}</span>
+                  <span className="rounded bg-error px-2 py-0.5 text-xs font-medium text-white">+{a.increase_pct}%</span>
                 </div>
                 <p className="mt-1 text-lg font-medium text-stone-900">{a.value}</p>
                 <p className="text-sm tabular-nums text-stone-700">{a.recent_daily_avg}/day now vs {a.baseline_daily_avg}/day baseline · z = {a.z_score}</p>
@@ -45,7 +45,7 @@ export default function Trends() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {[['Top products', t.top_products, '#fe7a2f'], ['Top locations', t.top_locations, '#03b2cb']].map(([title, data, color]) => (
+        {[['Top products', t.top_products, '#8a7cf0'], ['Top locations', t.top_locations, '#03b2cb']].map(([title, data, color]) => (
           <Card key={title} title={title}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={toBars(data)} layout="vertical" margin={{ left: 30 }}>

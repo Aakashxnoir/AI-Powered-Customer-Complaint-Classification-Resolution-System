@@ -3,6 +3,8 @@ category, product and location, using a z-score with a minimum-volume floor.
 
 Windows are measured in 24-hour periods back from the newest complaint, so a few
 complaints arriving early on a new calendar day do not hide an ongoing spike."""
+import math
+
 import pandas as pd
 
 WINDOW = 3          # days in the "recent" window
@@ -20,12 +22,15 @@ def daily_series(df: pd.DataFrame, by: str | None = None) -> list[dict]:
     return [{"day": str(k), **{c: int(v) for c, v in row.items()}} for k, row in t.iterrows()]
 
 
-def detect(df: pd.DataFrame) -> list[dict]:
+def detect(df: pd.DataFrame, now=None) -> list[dict]:
     if df.empty:
         return []
-    tmax = df.created_at.max()
-    age = ((tmax - df.created_at) / pd.Timedelta(days=1)).astype(int)  # 0 = last 24h
-    df = df.assign(age=age)[age < BASELINE + WINDOW]
+    # Anchor at the newest complaint, but never in the future: one mis-dated row must not hide spikes.
+    tmax = min(df.created_at.max(), pd.Timestamp(now or pd.Timestamp.now()))
+    age = ((tmax - df.created_at) / pd.Timedelta(days=1)).apply(math.floor)  # 0 = last 24h
+    if age.max() < BASELINE + WINDOW - 1:
+        return []  # not enough history for a baseline; zero-filled days would fake a spike
+    df = df.assign(age=age)[(age >= 0) & (age < BASELINE + WINDOW)]
     periods = range(BASELINE + WINDOW)
     alerts = []
     for dim in ["category", "product", "location"]:

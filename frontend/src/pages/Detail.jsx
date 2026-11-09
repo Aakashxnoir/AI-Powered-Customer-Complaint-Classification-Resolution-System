@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api'
-import { Badge, CAT_COLORS, CATEGORIES, Card, CatBadge, DEPARTMENTS, Loading, PRIORITIES, SENTIMENTS, ScoreBar, btnGhost, btnPrimary, fmtDate, input, notify } from '../ui'
+import { AiMark, Badge, CAT_COLORS, CATEGORIES, Card, CatBadge, DEPARTMENTS, Loading, PRIORITIES, SENTIMENTS, ScoreBar, btnGhost, btnPrimary, fmtDate, input, notify } from '../ui'
 
 const ENTITY_LABELS = { order_ids: 'Order ID', amounts: 'Amount', products: 'Product', locations: 'Location', dates: 'Date', emails: 'Email', phones: 'Phone' }
 
@@ -10,7 +10,7 @@ function highlight(text, words) {
   const set = new Set(words.map((w) => w.toLowerCase()))
   return text.split(/(\s+)/).map((tok, i) =>
     set.has(tok.replace(/[.,!?]/g, '').toLowerCase())
-      ? <mark key={i} className="rounded bg-amber-200 px-0.5">{tok}</mark> : tok)
+      ? <mark key={i} className="rounded bg-ai-accent/15 px-0.5 text-ink">{tok}</mark> : tok)
 }
 
 function Correct({ field, value, options, onSave }) {
@@ -34,25 +34,26 @@ export default function Detail() {
   const [reply, setReply] = useState('')
   const [err, setErr] = useState('')
 
-  const load = () => api.get(id).then((d) => { setC(d); setReply(d.final_response || d.draft?.response || '') }).catch((e) => setErr(e.message))
-  useEffect(() => { load() }, [id])
+  const load = useCallback(() => api.get(id).then((d) => { setC(d); setReply(d.final_response || d.draft?.response || '') }).catch((e) => setErr(e.message)), [id])
+  useEffect(() => { load() }, [load])
 
-  const review = async (field, value) => { await api.review(id, { field, value }); notify(`${field} set to ${value}`); load() }
-  const confirmAll = async () => {
-    for (const f of ['category', 'priority', 'department', 'sentiment']) await api.review(id, { field: f, value: c[f] })
-    notify('All four predictions confirmed')
-    load()
+  // Every write goes through here: one place that clears the busy flag and shows the error.
+  const run = async (name, fn, done) => {
+    setBusy(name); setErr('')
+    try { await fn(); if (done) notify(done) } catch (e) { setErr(e.message) } finally { setBusy(''); load() }
   }
+  const review = (field, value) => run('review', () => api.review(id, { field, value }), `${field} set to ${value}`)
+  const confirmAll = () => run('review', async () => {
+    for (const f of ['category', 'priority', 'department', 'sentiment']) await api.review(id, { field: f, value: c[f] })
+  }, 'All four predictions confirmed')
   const draft = async () => {
     setBusy('draft'); setErr('')
     try { const d = await api.draft(id); setC({ ...c, draft: d }); setReply(d.response) } catch (e) { setErr(e.message) } finally { setBusy('') }
   }
-  const respond = async (action) => {
-    setBusy(action); await api.respond(id, { action, text: reply }); await load(); setBusy('')
-    notify(action === 'approve' ? 'Reply approved' : 'Draft rejected')
-  }
+  const respond = (action) => run(action, () => api.respond(id, { action, text: reply }),
+    action === 'approve' ? 'Reply approved' : 'Draft rejected')
 
-  if (err && !c) return <p className="text-red-600">{err}</p>
+  if (err && !c) return <p role="alert" className="text-error">{err}</p>
   if (!c) return <Loading />
   const scores = Object.entries(c.category_scores).sort((a, b) => b[1] - a[1])
   const ents = Object.entries(c.entities).filter(([, v]) => v.length)
@@ -67,7 +68,7 @@ export default function Detail() {
         </div>
         <div className="flex items-center gap-2">
           <Badge value={c.status} />
-          {c.reviewed ? <span className="text-xs text-emerald-700">✓ reviewed</span>
+          {c.reviewed ? <span className="text-xs text-success">✓ reviewed</span>
             : <button className={btnGhost} onClick={confirmAll}>Confirm all predictions</button>}
         </div>
       </div>
@@ -84,27 +85,30 @@ export default function Detail() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Category" action={<Correct field="category" value={c.category} options={CATEGORIES} onSave={review} />}>
+        <Card title={<>Category <AiMark /></>} action={<Correct field="category" value={c.category} options={CATEGORIES} onSave={review} />}>
           <div className="mb-3 flex items-center gap-2"><CatBadge value={c.category} />
             {c.analysis.original?.category !== c.category && <span className="text-xs text-stone-500">(model said {c.analysis.original.category})</span>}</div>
           <div className="space-y-1.5">{scores.map(([k, v]) => <ScoreBar key={k} label={k} value={v} color={CAT_COLORS[k]} highlight={k === c.category} />)}</div>
           {c.explanation.length > 0 && (
-            <p className="mt-3 text-xs text-stone-600">Why: removing <b>{c.explanation.slice(0, 3).map((e) => `"${e.word}"`).join(', ')}</b> lowers the {c.analysis.original?.category} score by {c.explanation.slice(0, 3).map((e) => (e.impact * 100).toFixed(1) + '%').join(', ')}.</p>
+            <p className="mt-3 text-xs text-stone-600">Why: removing <b>{c.explanation.slice(0, 3).map((e) => `"${e.word}"`).join(', ')}</b> lowers the {c.category} score by {c.explanation.slice(0, 3).map((e) => (e.impact * 100).toFixed(1) + '%').join(', ')}.</p>
           )}
         </Card>
 
-        <Card title="Sentiment & emotion" action={<Correct field="sentiment" value={c.sentiment} options={SENTIMENTS} onSave={review} />}>
+        <Card title={<>Sentiment & emotion <AiMark /></>} action={<Correct field="sentiment" value={c.sentiment} options={SENTIMENTS} onSave={review} />}>
           <div className="mb-3 flex items-center gap-2"><Badge value={c.sentiment} />
             <span className="text-xs text-stone-500">{(c.sentiment_confidence * 100).toFixed(0)}% · emotion <b>{c.analysis.emotion}</b> · frustration {(c.analysis.frustration * 100).toFixed(0)}%</span></div>
           <div className="space-y-1.5">
-            {Object.entries(c.analysis.sentiment_scores).map(([k, v]) => <ScoreBar key={k} label={k} value={v} color="#64748b" />)}
+            {Object.entries(c.analysis.sentiment_scores).map(([k, v]) => <ScoreBar key={k} label={k} value={v} color="var(--color-ink-muted)" />)}
             <div className="pt-2" />
-            {Object.entries(c.analysis.emotion_scores).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => <ScoreBar key={k} label={k} value={v} color="#f97316" />)}
+            {Object.entries(c.analysis.emotion_scores).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => <ScoreBar key={k} label={k} value={v} color="var(--color-ink-subtle)" />)}
           </div>
         </Card>
 
-        <Card title="Priority" action={<Correct field="priority" value={c.priority} options={PRIORITIES} onSave={review} />}>
+        <Card title={<>Priority <AiMark>rules</AiMark></>} action={<Correct field="priority" value={c.priority} options={PRIORITIES} onSave={review} />}>
           <div className="mb-3 flex items-center gap-2"><Badge value={c.priority} /><span className="text-xs text-stone-500">score {c.priority_score} (critical ≥8, high ≥5, medium ≥3)</span></div>
+          <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600">
+            {['urgency', 'severity'].map((k) => <span key={k} className="whitespace-nowrap">{k} <b className="text-stone-900">{c[k].level}</b> ({(c[k].score * 100).toFixed(0)}% rule score)</span>)}
+          </div>
           <ul className="space-y-1 text-sm">
             {c.priority_factors.map((f, i) => <li key={i} className="flex gap-2"><span className="w-8 shrink-0 text-right tabular-nums text-stone-500">+{f.points}</span>{f.reason}</li>)}
           </ul>
@@ -136,22 +140,22 @@ export default function Detail() {
       )}
 
       <Card title="Resolution assistant" action={<button className={btnGhost} onClick={draft} disabled={!!busy}>{busy === 'draft' ? 'Drafting…' : c.draft ? 'Regenerate' : 'Generate draft'}</button>}>
-        {err && <p className="mb-2 text-sm text-red-600">{err}</p>}
-        {!c.draft ? <p className="text-sm text-stone-500">Generate a reply grounded in approved support guidance. Nothing is sent without approval.</p> : (
+        {err && <p role="alert" className="mb-2 text-sm text-error">{err}</p>}
+        {!c.draft ? <p className="text-sm text-stone-500">Generate a reply grounded in approved support guidance. A person approves every reply; sending happens outside this demo.</p> : (
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2 text-xs text-stone-500">
-              <span>Generated by <b>{c.draft.generator}</b></span>
-              {c.draft.llm_error && <span className="text-amber-700">(LLM failed, template used)</span>}
+              <span><AiMark>Drafted by {c.draft.generator}</AiMark></span>
+              {c.draft.llm_error && <span className="text-ink-muted">(LLM failed, template used)</span>}
               <span>· Grounded in: {c.draft.sources.map((s) => <span key={s.id} className="ml-1 rounded bg-stone-100 px-1.5 py-0.5">{s.title}</span>)}</span>
             </div>
             <textarea className={`${input} h-48 w-full font-sans`} value={reply} onChange={(e) => setReply(e.target.value)} disabled={c.status !== 'new'} />
             <p className="text-sm"><span className="font-medium">Next action for staff:</span> {c.draft.next_action}</p>
             {c.status === 'new' ? (
               <div className="flex gap-2">
-                <button className={btnPrimary} disabled={!!busy} onClick={() => respond('approve')}>Approve & send</button>
+                <button className={btnPrimary} disabled={!!busy || !reply.trim()} onClick={() => respond('approve')}>Approve reply</button>
                 <button className={btnGhost} disabled={!!busy} onClick={() => respond('reject')}>Reject draft</button>
               </div>
-            ) : <p className="text-sm text-emerald-700">Response {c.status}.</p>}
+            ) : <p className="text-sm text-success">Response {c.status}.</p>}
           </div>
         )}
       </Card>
