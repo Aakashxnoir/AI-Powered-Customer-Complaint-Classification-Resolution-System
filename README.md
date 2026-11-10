@@ -65,6 +65,8 @@ cd frontend && npm install && npm run dev
 cd backend && uv run pytest -q
 ```
 
+**Deploy.** The `Dockerfile` builds the frontend and serves landing page, console and API from one container on port 7860 (needs about 4 GB RAM for the three models; Hugging Face Spaces' free Docker tier fits). The database starts empty: submit complaints in the console or upload a CSV. `ml/seed_db.py` is an optional dev tool that loads a synthetic demo stream. Environment: `GEMINI_API_KEY` (optional), `DATABASE_URL` (optional, SQLite by default), `ALLOWED_HOSTS` (default `*` in the image).
+
 <div align="center">
   <br>
   <h3><code>aakash@github ~/AI-Powered-Customer-Complaint-Classification-Resolution-System $ ./links.sh</code></h3>

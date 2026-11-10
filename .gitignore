@@ -9,3 +9,4 @@ data/raw/
 .pytest_cache/
 frontend/.taste-skill/
 backend/artifacts/classifier_retrained.joblib
+*.zip

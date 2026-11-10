@@ -3,13 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { Card, btnPrimary, input } from '../ui'
 
-const EXAMPLES = [
-  'I was charged twice for order ORD-554210! ₹12,499 debited two times from my card on 5 Nov. This is unacceptable, fix it today.',
-  'My SmartWatch X2 is overheating badly and smells like burning plastic. Order ORD-883120.',
-  'Order ORD-120034 was supposed to arrive in Chennai on 2 Nov but tracking is stuck at the hub for a week.',
-  'Someone else logged into my account and placed an order without my permission.',
-]
-
 export default function Intake() {
   const nav = useNavigate()
   const [text, setText] = useState('')
@@ -42,11 +35,6 @@ export default function Intake() {
           <form onSubmit={submit} className="space-y-3">
             <input className={`${input} w-full`} placeholder="Customer name / ID (optional)" value={customer} onChange={(e) => setCustomer(e.target.value)} />
             <textarea className={`${input} h-40 w-full`} placeholder="Describe the issue…" value={text} onChange={(e) => setText(e.target.value)} required minLength={10} />
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((ex, i) => (
-                <button type="button" key={i} onClick={() => setText(ex)} className="rounded-md border border-hairline bg-white px-2.5 py-1 text-xs text-ink-muted hover:bg-surface-2">Example {i + 1}</button>
-              ))}
-            </div>
             <button className={btnPrimary} disabled={busy}>{busy === 'one' ? 'Analysing…' : 'Analyse complaint'}</button>
           </form>
         </Card>

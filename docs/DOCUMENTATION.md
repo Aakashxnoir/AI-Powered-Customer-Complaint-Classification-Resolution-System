@@ -50,6 +50,10 @@ Offline scripts in `ml/`:
 - `evaluate.py` evaluates the other components.
 - `seed_db.py` loads the demo stream through the live pipeline.
 
+## 3a. Deployment
+
+A multi-stage `Dockerfile` builds the Vite frontend, installs the CPU PyTorch stack with `uv`, bakes the three pretrained models into the image and starts `uvicorn` on port 7860. FastAPI serves `frontend/dist` (landing page at `/`, console at `/app`) from the same origin as `/api`, so no CORS or proxy is needed. The database is empty at start; `DATABASE_URL` selects PostgreSQL, otherwise SQLite.
+
 ## 4. Technology choices
 
 - **Sentence Transformers (MiniLM) + scikit-learn LR.** One 384-d embedding serves classification, duplicate detection, similar-complaint search and RAG retrieval. It is fast on CPU, beat the TF-IDF baseline by 11 accuracy points, and can be retrained in seconds from cached embeddings. Fine-tuning a transformer would cost far more compute for little gain at this data size.
@@ -99,7 +103,7 @@ Per-class F1 (MiniLM): payment 1.00, account 0.97, technical 0.92, refund 0.90, 
 - **Mild Bitext leak.** 53 of 457 Bitext test rows have token-Jaccard ≥ 0.8 with a training row, which partly explains Bitext's 99.8%. The dataset revision is not pinned.
 - **Retrain gate** reuses the offline test set, and the seeded demo complaints are built from test templates, so corrections on them leak into the gate.
 - **Keyword rules** use a 3-word negation window, not a parser.
-- **No authentication.** The API is meant for a local demo behind the Vite proxy. Local-only guards are in place (only `localhost`/`127.0.0.1` hosts, writes refused from foreign browser origins, console not frameable), but put it behind SSO before real use.
+- **No authentication.** Anyone who can reach the deployment can read and submit complaints. Guards in place: host allow-list (`ALLOWED_HOSTS`), writes refused from foreign browser origins, console not frameable. Put it behind SSO before real use. The hosted instance starts with an empty database; the free tier's disk is ephemeral, so data resets on restart.
 - **English only, CPU only.** Seeding about 1,200 complaints takes about 3-5 minutes on CPU.
 - **LLM output** is constrained by prompt and retrieval but not formally verified. Staff approval is the safeguard.
 

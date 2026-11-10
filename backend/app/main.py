@@ -1,5 +1,7 @@
 import io
 import json
+import os
+from pathlib import Path
 from collections import Counter, defaultdict
 from contextlib import asynccontextmanager
 
@@ -9,6 +11,8 @@ import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
 from sklearn.linear_model import LogisticRegression
 from sqlalchemy import func, select
@@ -46,14 +50,17 @@ app = FastAPI(title="Complaint Intelligence API", lifespan=lifespan)
 # ponytail: no auth and no CORS; the UI reaches /api through the Vite proxy (same origin).
 # Put it behind SSO / a reverse proxy before real use.
 # Local-only guards: refuse DNS-rebinding hosts, and refuse writes a foreign web page sends from the browser.
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
+# Deployed: set ALLOWED_HOSTS to the public hostname(s), comma-separated.
+app.add_middleware(TrustedHostMiddleware,
+                   allowed_hosts=[h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()])
 CONSOLE_ORIGINS = {"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173", "http://127.0.0.1:4173"}
 
 
 @app.middleware("http")
 async def same_origin_writes(request: Request, call_next):
     origin = request.headers.get("origin")
-    if request.method not in ("GET", "HEAD", "OPTIONS") and origin and origin not in CONSOLE_ORIGINS:
+    same_host = origin is not None and origin.split("://", 1)[-1] == request.headers.get("host")
+    if request.method not in ("GET", "HEAD", "OPTIONS") and origin and origin not in CONSOLE_ORIGINS and not same_host:
         return JSONResponse({"detail": "cross-origin write refused"}, status_code=403)
     return await call_next(request)
 
@@ -396,3 +403,21 @@ def retrain(db: Session = Depends(get_db)):
 def health():
     import os
     return {"ok": True, "llm": resolver.MODEL if os.environ.get("GEMINI_API_KEY") else "template-fallback"}
+
+
+# Production: serve the built frontend (landing at /, console at /app) from the same origin as the API.
+DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+class SPA(StaticFiles):
+    async def get_response(self, path, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as e:
+            if e.status_code == 404 and (path == "app" or path.startswith("app/")) and "." not in path:
+                return await super().get_response("app/index.html", scope)
+            raise
+
+
+if DIST.is_dir():
+    app.mount("/", SPA(directory=DIST, html=True), name="web")

@@ -14,7 +14,7 @@ from .embeddings import embed
 
 KB_DIR = Path(__file__).resolve().parents[3] / "data" / "kb"
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
 
 @lru_cache
